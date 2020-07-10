@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+
+<ui:composition template="/WEB-INF/templates/Layout.xhtml"
+	xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+	<ui:define name="corpo">
+		<f:metadata>
+			<f:viewAction action="#{gestaoFuncionariosBean.consultar}" />
+			<f:viewAction action="#{gestaoCargosBean.consultar}" />
+		</f:metadata>
+
+		<h1>Cadastro de Funcionários</h1>
+		<h:form id="frm">
+		
+			<p:messages id="msgs"/>
+
+			<p:toolbar id="toolbar">
+				<f:facet name="left">
+					<p:commandButton value="Nova" icon="ui-icon-document"
+						action="#{gestaoFuncionariosBean.prepararNovoCadastro}"
+						process="@this" update="funcionario-dialog"
+						oncomplete="PF('edicaoFuncionarioDialog').show()">
+						<p:resetInput target="funcionario-dialog"/>
+					</p:commandButton>
+					
+					<span class="ui-separator"> 
+						<span class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+					<p:commandButton icon="ui-icon-pencil" title="Editar"
+						process="@this" update="funcionario-dialog"
+						oncomplete="PF('edicaoFuncionarioDialog').show()"
+						disabled="#{gestaoFuncionariosBean.funcionarioSelecionado == null}">
+						<p:resetInput target="funcionario-dialog"/>
+						
+						<f:setPropertyActionListener value="#{gestaoFuncionariosBean.funcionarioSelecionado}" 
+							target="#{gestaoFuncionariosBean.funcionarioEdicao}"/>
+					</p:commandButton>
+
+					<p:commandButton icon="ui-icon-trash" title="Excluir" 
+						process="@this" update="funcionarios-table msgs toolbar"
+						action="#{gestaoFuncionariosBean.excluir}"
+						disabled="#{gestaoFuncionariosBean.funcionarioSelecionado == null}">
+						<p:confirm icon="ui-icon-alert" header="Confirmação de exclusão"
+								message="Tem certeza que deseja excluir este funcionário?"/>
+					</p:commandButton>
+						
+					<p:commandButton icon="ui-icon-arrowthick-1-s"
+						title="Exportar para XLS" 
+						ajax="false" immediate="true">
+            			<p:dataExporter type="xls" target="funcionarios-table" fileName="funcionarios"/>
+            		</p:commandButton>
+            		
+				</f:facet>
+			</p:toolbar>
+
+			<p:dataTable value="#{gestaoFuncionariosBean.todosFuncionarios}"
+				var="funcionario" emptyMessage="Nenhum funcionário cadastrado."
+				rows="10" paginator="true" paginatorPosition="bottom"
+				style="margin-top:10px" id="funcionarios-table"
+				selection="#{gestaoFuncionariosBean.funcionarioSelecionado}"
+				selectionMode="single" rowKey="#{funcionario.id}">
+				
+				<p:ajax event="rowSelect" update=":frm:toolbar"/>
+				<p:ajax event="rowUnselect" update=":frm:toolbar"/>
+				
+				<p:column headerText="Matrícula" width="100">
+					<h:outputText value="#{funcionario.matricula}" />
+				</p:column>
+				<p:column headerText="Nome" sortBy="#{funcionario.nome}">
+					<h:outputText value="#{funcionario.nome}" />
+				</p:column>
+				<p:column headerText="Salário" width="150">
+					<h:outputText value="#{funcionario.salario}" />
+				</p:column>
+				<p:column headerText="Cargo" width="250">
+					<h:outputText value="#{funcionario.cargo.descricao}" />
+				</p:column>
+			</p:dataTable>
+
+			<p:dialog header="Novo Funcionário"
+				widgetVar="edicaoFuncionarioDialog" id="funcionario-dialog"
+				resizable="false" modal="true" closeOnEscape="true">
+				
+				<p:messages id="msgs-dialog"/>
+				
+				<p:defaultCommand target="salvar-button" scope="funcionario-dialog" />
+				
+				<h:panelGrid columns="2" id="painel-dialog">
+					<p:outputLabel value="Matrícula" for="matricula" />
+					<p:inputText id="matricula" size="18" maxlength="18"
+						value="#{gestaoFuncionariosBean.funcionarioEdicao.matricula}" />
+
+					<p:outputLabel value="Nome" for="nome" />
+					<p:inputText id="nome" size="60" maxlength="80"
+						value="#{gestaoFuncionariosBean.funcionarioEdicao.nome}" />
+						
+					<p:outputLabel value="CPF" for="cpf"/>
+					<p:inputMask id="cpf" size="14" maxlength="14"
+						mask="999.999.999-99"/>
+
+					<p:outputLabel value="Salário" for="salario" />
+					<p:inputText id="salario" size="25" maxlength="22"
+						value="#{gestaoFuncionariosBean.funcionarioEdicao.salario}" />
+
+					<p:outputLabel value="Data de Admissão" for="data-admissao" />
+					<p:calendar id="data-admissao" size="10" maxlength="10"
+						value="#{gestaoFuncionariosBean.funcionarioEdicao.dataAdmissao}" 
+						pattern="dd/MM/yyyy" mask="99/99/9999"/>
+					
+
+					<p:outputLabel value="Situação" for="situacao" />
+					<p:selectOneMenu id="situacao"
+						value="#{gestaoFuncionariosBean.funcionarioEdicao.situacao}">
+						<f:selectItem itemLabel="Selecione" />
+						<f:selectItems value="#{gestaoFuncionariosBean.situacoes}"
+							var="situacao" itemLabel="#{situacao.descricao}"
+							itemValue="#{situacao}" />
+					</p:selectOneMenu>
+
+					<p:outputLabel value="Cargo" for="cargo" />
+					<p:selectOneMenu id="cargo"
+						value="#{gestaoFuncionariosBean.funcionarioEdicao.cargo}"
+						converter="cargoConverter">
+						<f:selectItem itemLabel="Selecione um cargo" />
+						<f:selectItems value="#{gestaoCargosBean.todosCargos}" var="cargo"
+							itemLabel="#{cargo.descricao}" itemValue="#{cargo}" />
+					</p:selectOneMenu>
+					<p:outputLabel />
+					<p:commandButton value="Salvar" id="salvar-button"
+						action="#{gestaoFuncionariosBean.salvar}"
+						process="funcionario-dialog" update="msgs-dialog painel-dialog"
+						oncomplete="if (!args.validationFailed) PF('edicaoFuncionarioDialog').hide()" />
+				</h:panelGrid>
+			</p:dialog>
+
+
+		</h:form>
+	</ui:define>
+</ui:composition>
